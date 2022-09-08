@@ -1,0 +1,24 @@
+---
+- name: Connect to remote host and cleanup server Folders.
+  hosts: all
+  gather_facts: yes
+  roles:
+  - role: loadvars
+
+  tasks:
+  - name: find all files that are older than 15 days
+    find:
+      paths: "/home/ftp/{{ item }}/dmshared/"
+      age: "{{ housekeeping_days_older_than_to_delete }}"
+      recurse: yes
+    with_list: "{{ cleanup_list }}"
+    register: filesOlderThan
+    vars:
+      ansible_become: True
+  - name: remove older than
+    file:
+      path: "{{ item.path }}" 
+      state: absent
+    with_items: "{{ filesOlderThan|json_query('results[*].files') }}"
+    vars:
+      ansible_become: True
